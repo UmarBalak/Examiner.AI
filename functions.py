@@ -317,9 +317,9 @@ def calculate_distance(distance_pixel, distance_cm, success, image):
 
         return distance_cm
 
-alerts  = {"visibility": ["Face is not visible", "Attention: Your face is not visible to the camera."],
-       "termination": ["Exam terminated due to candidate misconduct.", "Exam terminated due to candidate misconduct."],
-      "direction": ["Alert: It seems you are not facing the camera.", "Alert: It seems you are not facing the camera."] }
+alerts  = {"visibility": ["Attention: Your face is not visible to the camera."],
+      "direction": ["Alert: It seems you are not facing the camera."],
+       "object": ["Warning: An important object has been detected."] }
 
 ################################################################################################################################################
 
@@ -459,17 +459,17 @@ def run(camera):
 #                 if dir_warning_counter > 3 or warning_count > 3:    
 #                     speak(alerts["termination"][1])
 #                     return False
-                speak(alerts["direction"][1])
-                return False
+                # speak(alerts["direction"][1])
+                return False, alerts["direction"][0]
             else:
-                return True
+                return True, None
         
         else:  
             obj_d =  obj_detect(ret, frame)
             if obj_d is False:
-                speak("Warning: An important object has been detected.")
-                return False        
-            return True
+                # speak("Warning: An important object has been detected.")
+                return False, alerts["object"][0]      
+            return True, None
     else:
         end = time.time()
         totalTime = end - start_time  
@@ -491,12 +491,12 @@ def run(camera):
         # if vis_warning_counter > 1:
         #     vis_threshold = 8
         if visibility_counter > 20:
-            speak(alerts["visibility"][1])
+            # speak(alerts["visibility"][0])
             visibility_counter = 0
             change_dir_counter = 0
             vis_warning_counter += 1
             warning_count += 1   
-            return False
+            return False, alerts["visibility"][0]
 #                 if vis_warning_counter > 3 or warning_count > 3:
 #                     speak(alerts["termination"][1])
 #                     return False
@@ -508,6 +508,6 @@ def run(camera):
             # if obj_d is False:
             #     speak("Warning: An important object has been detected.")
             #     return False   
-            return True
+            return True, None
 
 

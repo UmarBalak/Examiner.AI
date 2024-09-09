@@ -1,61 +1,88 @@
 import streamlit as st
-import cv2
 import pyautogui
-from functions import *
-import numpy as np
+import cv2
+from functions import *  # Ensure these functions are available
 
-# Set up camera and session state
-if 'camera' not in st.session_state:
-    st.session_state.camera = cv2.VideoCapture(0)
-    st.session_state.count = 0
-    st.session_state.last_warning = True
-    st.session_state.frame = None
+# Streamlit App Title
+st.title("Exam Monitoring System")
 
-# Streamlit app title
-st.title("AI Proctored Exam System")
+# Initialize Camera
+camera = cv2.VideoCapture(0)
+if not camera.isOpened():
+    st.error("Error: Could not open camera.")
+    st.stop()  # Stop execution if the camera is not available
 
-# Function to capture and save frames and screenshots
-def capture_images(count):
-    ret, frame = st.session_state.camera.read()
+# A flag to control when the monitoring should stop
+stop_monitoring_flag = st.button("Stop Monitoring")
+
+
+def save_image_and_screenshot(count):
+    """Helper function to save images and screenshots."""
+    ret, frame = camera.read()
     if ret:
-        cv2.imwrite(f"image{count}.jpg", frame)
-        screenshot = pyautogui.screenshot()
-        screenshot.save(f"ss{count}.jpg")
-        return frame, screenshot
-    return None, None
+        img_filename = f"image{count}.jpg"
+        ss_filename = f"ss{count}.jpg"
+        
+        # Save the camera frame and a screenshot of the desktop
+        cv2.imwrite(img_filename, frame)
+        pyautogui.screenshot().save(ss_filename)
 
-# Displaying captured images
-if st.session_state.frame is not None:
-    st.image(st.session_state.frame, channels="BGR", caption="Current Frame")
+        return img_filename, ss_filename
+    else:
+        st.error("Error: Unable to capture image from camera")
+        return None, None
 
-# Button to start the exam system
-if st.button("Start Exam Monitoring"):
+
+# Main monitoring function
+def monitor():
+    count = 0
+    last_warning = True
+    captured_images = []
+    captured_screenshots = []
+    
+    result_placeholder = st.empty()
+
     while True:
-        result = run(st.session_state.camera)  # Call the AI model for result
-        st.write(f"Monitoring result: {result}")
+        # Check if the user clicked the "Stop Monitoring" button
+        if stop_monitoring_flag:
+            st.write("Monitoring manually stopped by user.")
+            break
 
+        result, to_speak = run(camera)  # Assume run returns True/False based on monitoring logic
+        result_placeholder.write(f"Run result: {result}")  # Updates in the same spot
+        
         if not result:
-            st.session_state.count += 1
-            frame, screenshot = capture_images(st.session_state.count)
-
-            # Display captured images
-            if frame is not None:
-                st.image(frame, channels="BGR", caption=f"Captured Image {st.session_state.count}")
-                st.image(np.array(screenshot), caption=f"Screenshot {st.session_state.count}")
-
-            # Handle warnings and actions
-            if st.session_state.count == 3 and st.session_state.last_warning:
-                speak("This is the last warning, After this, your exam will be terminated")
-                st.warning("Last Warning: Your exam will be terminated after the next violation.")
-                st.session_state.last_warning = False
-
-            if st.session_state.count == 4:
-                st.error("Exam Terminated!")
-                speak("Exam Terminated.")
-                st.session_state.camera.release()
+            count += 1
+            img, ss = save_image_and_screenshot(count)
+            speak(to_speak)
+            if img and ss:
+                captured_images.append(img)
+                captured_screenshots.append(ss)
+            
+            # Issue the warning at count 3 and terminate at count 4
+            if count == 3 and last_warning:
+                speak("This is the last warning. After this, your exam will be terminated.")
+                st.warning("This is the last warning. After this, your exam will be terminated.")
+                last_warning = False
+            elif count == 4:
+                st.write("Monitoring stopped after 4 warnings.")
                 break
 
-# Clean up when the app is stopped
-if st.button("Stop Monitoring"):
-    st.session_state.camera.release()
-    st.write("Camera stopped.")
+    # Release the camera after monitoring
+    camera.release()
+    cv2.destroyAllWindows()
+
+    # Display captured images and screenshots after monitoring
+    if captured_images and captured_screenshots:
+        st.subheader("Captured Images and Screenshots:")
+        for i in range(len(captured_images)):
+            st.image(captured_images[i], caption=f"Captured Image {i + 1}")
+            st.image(captured_screenshots[i], caption=f"Screenshot {i + 1}")
+
+
+# Button to start the monitoring process
+if st.button("Start Monitoring"):
+    monitor()
+
+# Display closing message
+st.write("Ready to monitor.")
