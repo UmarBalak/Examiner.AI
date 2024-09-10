@@ -407,7 +407,6 @@ def obj_detect(ret, image):
 def run(camera):
     global change_dir_counter, start_time, dir_warning_counter, visibility_counter, vis_warning_counter, warning_count, alerts
     ret, frame = camera.read()
-#     print(frame)
     frame = cv2.flip(frame, 1)
     frame = cv2.resize(frame, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)
     frame_height, frame_width, _ = frame.shape
@@ -416,12 +415,6 @@ def run(camera):
     
     direction = ''
         
-    ##########################################################################################################################
-    # obj_d =  obj_detect(ret, frame)
-    # if obj_d is False:
-    #     speak("Warning: An important object has been detected.")
-    #     return False
-    #############################################################################################
     if results.multi_face_landmarks:    
         head_direction = head_pose(rgb_frame, results)
         
@@ -442,13 +435,8 @@ def run(camera):
         else:
             fps = 0
         start_time = end      
-#         print(fps)  
 
         if direction in ["Right", "Left", "Up"]:
-            # if fps > 0:
-            #     change_dir_counter += (1/fps)
-            # else:
-            #     change_dir_counter += 0.5
             change_dir_counter += 1
             print(change_dir_counter)
             if change_dir_counter > 20: # 65 good
@@ -456,10 +444,7 @@ def run(camera):
                 visibility_counter = 0
                 dir_warning_counter += 1
                 warning_count += 1
-#                 if dir_warning_counter > 3 or warning_count > 3:    
-#                     speak(alerts["termination"][1])
-#                     return False
-                # speak(alerts["direction"][1])
+
                 return False, alerts["direction"][0]
             else:
                 return True, None
@@ -467,7 +452,6 @@ def run(camera):
         else:  
             obj_d =  obj_detect(ret, frame)
             if obj_d is False:
-                # speak("Warning: An important object has been detected.")
                 return False, alerts["object"][0]      
             return True, None
     else:
@@ -478,36 +462,16 @@ def run(camera):
         else:
             fps = 0
         start_time = end
-        
-        # vis_threshold = 0
-        # if fps > 0:
-        #     visibility_counter += (1/fps)
-        # else:
-        #     visibility_counter += 0.5
-        visibility_counter += 1
-        # print(visibility_counter)
 
-        # vis_threshold = 5
-        # if vis_warning_counter > 1:
-        #     vis_threshold = 8
+        visibility_counter += 1
+
         if visibility_counter > 20:
-            # speak(alerts["visibility"][0])
             visibility_counter = 0
             change_dir_counter = 0
             vis_warning_counter += 1
             warning_count += 1   
-            return False, alerts["visibility"][0]
-#                 if vis_warning_counter > 3 or warning_count > 3:
-#                     speak(alerts["termination"][1])
-#                     return False
-#                 else:
-#                     speak(alerts["visibility"][1])
-#                     return False                
-        else:   
-            # obj_d =  obj_detect(ret, frame)
-            # if obj_d is False:
-            #     speak("Warning: An important object has been detected.")
-            #     return False   
+            return False, alerts["visibility"][0]              
+        else:     
             return True, None
 
 
