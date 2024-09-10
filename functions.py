@@ -345,133 +345,98 @@ desired_features = ["person", "book", "cell phone"]
 alert_timer = 0
 alert_triggered = False
 
+# Object detection function with simplified calculations
 def obj_detect(ret, image):
-    # if not ret:
-    #     return True
     global alert_timer, alert_triggered, start_time
-    
-    # Perform object detection
-    results = model.predict(image, device='cpu')
 
-    # Initialize count list for desired features
-    count = [0] * len(desired_features)
+    results = model.predict(image, device='cpu')
+    count = [0] * len(desired_features)  # Initialize count for desired features
 
     for r in results:
         boxes = r.boxes
-
         for box in boxes:
-            # Get the class ID
-            cls_id = int(box.cls[0])
-            
-            # Get the class name
+            cls_id = int(box.cls[0])  # Get the class ID
             class_name = classNames[cls_id]
-            
-            # Check if the detected class is one of the desired features
+
             if class_name in desired_features:
-                x1, y1, x2, y2 = map(int, box.xyxy[0])  # Convert coordinates to integers
-                w, h = x2 - x1, y2 - y1  # Calculate width and height of the bounding box
-                
-                # Draw the bounding box and label
-                # cvzone.cornerRect(image, (x1, y1, w, h))
-                # conf = round(box.conf[0].item(), 2) # Round confidence score to two decimal places
-                # cvzone.putTextRect(image, f'{class_name} {conf}', (max(0, x1), max(35, y1)), scale=1, thickness=1) 
-                
-                # Increment count for the detected class
-                count[desired_features.index(class_name)] += 1  
+                count[desired_features.index(class_name)] += 1  # Increment count for detected class
+
+    # Calculate FPS based on time elapsed
     end = time.time()
-    totalTime = end - start_time  
-    if totalTime > 0:
-        fps = 1 / totalTime
-    else:
-        fps = 0
+    totalTime = end - start_time
+    fps = 1 / totalTime if totalTime > 0 else 0
     start_time = end
 
-    # Check if person count exceeds threshold
+    # Trigger alert if thresholds are exceeded
     if count[0] > 1 or count[1] > 0 or count[2] > 0:
-        # Increment the alert timer
         alert_timer += 1
         if alert_timer > 15:
-            # Trigger alert
             alert_triggered = True
             alert_timer = 0
-            return False  # Reset the timer after alert
-    # Display the image
-    # cv2.imshow("Image", image)
-    # cv2.waitKey(1)
-    
-    return True
+            return False  # Alert triggered
+    return True  # No alert
 
 
 ################################################################################################################################################
 
 def run(camera):
     global change_dir_counter, start_time, dir_warning_counter, visibility_counter, vis_warning_counter, warning_count, alerts
-    ret, frame = camera.read()
-    frame = cv2.flip(frame, 1)
-    frame = cv2.resize(frame, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)
-    frame_height, frame_width, _ = frame.shape
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    results = face_mesh.process(rgb_frame)
     
-    direction = ''
-        
-    if results.multi_face_landmarks:    
-        head_direction = head_pose(rgb_frame, results)
-        
+    ret, frame = camera.read()
+    frame = cv2.flip(frame, 1)  # Flip the frame horizontally
+    frame = cv2.resize(frame, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)  # Resize for uniform input
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  # Convert frame to RGB
+
+    results = face_mesh.process(rgb_frame)  # Process the frame for face landmarks
+    direction, head_direction = '', ''
+    obj_d = True
+    fps = 0
+
+    # If face landmarks are detected
+    if results.multi_face_landmarks:
+        head_direction = head_pose(rgb_frame, results)  # Get head direction
+
         if head_direction in ["Center", "Up"]:
-            eye_direction = eye_track(ret, frame,  rgb_frame, results)
-            direction = eye_direction      
+            eye_direction = eye_track(ret, frame, rgb_frame, results)  # Track eye direction
+            direction = eye_direction
         else:
             direction = head_direction
 
-        distance_pixel = [178, 150, 137, 111, 94, 81, 65, 54]
-        distance_cm = [19, 22, 27, 34, 42, 49, 61, 72]
-        distance_cm = calculate_distance(distance_pixel, distance_cm, ret, frame)
-        
+        # Calculate FPS
         end = time.time()
-        totalTime = end - start_time  
-        if totalTime > 0:
-            fps = 1 / totalTime
-        else:
-            fps = 0
-        start_time = end      
+        totalTime = end - start_time
+        fps = 1 / totalTime if totalTime > 0 else 0
+        start_time = end
 
+        # Monitor direction changes
         if direction in ["Right", "Left", "Up"]:
             change_dir_counter += 1
-            print(change_dir_counter)
-            if change_dir_counter > 20: # 65 good
+            if change_dir_counter > 20:
                 change_dir_counter = 0
-                visibility_counter = 0
                 dir_warning_counter += 1
                 warning_count += 1
-
-                return False, alerts["direction"][0]
-            else:
-                return True, None
-        
-        else:  
-            obj_d =  obj_detect(ret, frame)
-            if obj_d is False:
-                return False, alerts["object"][0]      
-            return True, None
-    else:
-        end = time.time()
-        totalTime = end - start_time  
-        if totalTime > 0:
-            fps = 1 / totalTime
+                return False, direction, head_direction, fps, obj_d, alerts["direction"][0]
+            return True, direction, head_direction, fps, obj_d, None
         else:
-            fps = 0
+            obj_d = obj_detect(ret, frame)
+            if not obj_d:
+                return False, direction, head_direction, fps, obj_d, alerts["object"][0] 
+            return True, direction, head_direction, fps, obj_d, None
+    else:
+        # If no face detected, increment visibility counter
+        end = time.time()
+        totalTime = end - start_time
+        fps = 1 / totalTime if totalTime > 0 else 0
         start_time = end
 
         visibility_counter += 1
-
         if visibility_counter > 20:
             visibility_counter = 0
             change_dir_counter = 0
             vis_warning_counter += 1
-            warning_count += 1   
-            return False, alerts["visibility"][0]              
-        else:     
-            return True, None
+            warning_count += 1
+            return False, direction, head_direction, fps, obj_d, alerts["visibility"][0] 
+        return True, direction, head_direction, fps, obj_d, None
+
 
 

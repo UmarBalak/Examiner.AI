@@ -15,14 +15,14 @@ st.markdown("""
         .main-title {
             font-size: 36px;
             font-weight: bold;
-            color: #FFFFFF;
+            color: black;
             text-align: center;
             margin-bottom: 30px;
         }
         .subheader {
             font-size: 24px;
             font-weight: bold;
-            color: #2E8B57;
+            color: black;
         }
         .camera-status {
             font-size: 18px;
@@ -30,26 +30,26 @@ st.markdown("""
             color: #32CD32;
         }
         .stButton>button {
-            background-color: #007acc;
+            background-color: #FF4B4B;
             color: white;
             font-size: 16px;
             border-radius: 8px;
             margin-top: 20px;
         }
         .stButton>button:hover {
-            background-color: #005f99;
-            color: white;
+            background-color: white;
+            color: #FF4B4B;
         }
         .streamlit-container {
             padding: 20px;
         }
         .metric-card {
-            background-color: #007acc;
+            background-color: #FFFFFF;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
-            color: white;
+            color: #FF4B4B;
             text-align: center;
             font-family: Arial, sans-serif;
         }
@@ -70,17 +70,17 @@ st.markdown("""
             color: #f0f0f0;
         }
         .fps-card {
-            background-color: #28a745;  /* Green for FPS */
+            background-color: white;  /* Green for FPS */
         }
-        .eye-card {
-            background-color: #17a2b8;  /* Light blue for Eye Direction */
-        }
-        .head-card {
-            background-color: #ffc107;  /* Yellow for Head Direction */
-        }
-        .obj-card {
-            background-color: #dc3545;  /* Red for Background Status */
-        }
+        # .eye-card {
+        #     background-color: #17a2b8;  /* Light blue for Eye Direction */
+        # }
+        # .head-card {
+        #     background-color: #ffc107;  /* Yellow for Head Direction */
+        # }
+        # .obj-card {
+        #     background-color: #dc3545;  /* Red for Background Status */
+        # }
     </style>
 """, unsafe_allow_html=True)
 
@@ -93,7 +93,7 @@ def process_frame(camera):
     return result, eye_d, head_d, fps, obj_d, alert_msg
 
 def main():
-    st.markdown("<h1 class='main-title'>Real-Time Proctoring System</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>Examiner.AI:<br> AI Proctored Exam System </h1>", unsafe_allow_html=True)
 
     # Sidebar for camera control buttons
     with st.sidebar:
@@ -111,16 +111,14 @@ def main():
     # Placeholder for the camera status message
     camera_status_placeholder = st.empty()
 
-    if not start_button:
-        camera_status_placeholder.markdown("<p class='warning'>Press 'Start Camera' to begin monitoring.</p>", unsafe_allow_html=True)
-
-    st.markdown("<h3 class='subheader'>Live Video Feed</h3>", unsafe_allow_html=True)
-    
+    # st.markdown("<h3 class='subheader'>Live Video Feed</h3>", unsafe_allow_html=True)
+    subheading1_placeholder = st.empty()
+    subheading1_placeholder.markdown("<p class='camera-status'>Press 'Start Camera' to begin.</p>", unsafe_allow_html=True)
     # Placeholder for video feed with reduced height
     FRAME_WINDOW = st.image([])  # Placeholder for the video feed
 
-    st.markdown("<h3 class='subheader'>Real-Time Metrics</h3>", unsafe_allow_html=True)
-
+    # st.markdown("<h3 class='subheader'>Real-Time Metrics</h3>", unsafe_allow_html=True)
+    subheading2_placeholder = st.empty()
     c1, c2, c3, c4 = st.columns([1, 1, 1, 1])
     # Create placeholders for real-time metrics using the card-based UI
     with c1:
@@ -165,7 +163,9 @@ def main():
             frame_rgb = cv2.resize(frame_rgb, (int(frame_rgb.shape[1] * 1.0), int(frame_rgb.shape[0] * 0.75)))
 
             if frame_rgb is not None:
+                subheading1_placeholder.markdown("<h3 class='subheader'>Live Video Feed</h3>", unsafe_allow_html=True)
                 FRAME_WINDOW.image(frame_rgb, caption="Live Feed", use_column_width=False)
+                subheading2_placeholder.markdown("<h3 class='subheader'>Real-Time Metrics</h3>", unsafe_allow_html=True)
 
                 # Process frame metrics
                 result, eye_d, head_d, fps, obj_d, alert_msg = process_frame(camera)
