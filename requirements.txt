@@ -88,3 +88,4 @@ Werkzeug==3.0.3
 wget==3.2
 wrapt==1.14.1
 zipp==3.11.0
+distutils
