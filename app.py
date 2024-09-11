@@ -98,8 +98,8 @@ def main():
     # Sidebar for camera control buttons
     with st.sidebar:
         st.header("Controls")
-        start_button = st.button("Start Camera")
-        stop_button = st.button("Stop Camera")
+        start_button = st.button("Start Monitoring")
+        stop_button = st.button("Stop/Reset")
 
         # Placeholder for warnings below the buttons
         warning_count_placeholder = st.empty() 
@@ -113,7 +113,7 @@ def main():
 
     # st.markdown("<h3 class='subheader'>Live Video Feed</h3>", unsafe_allow_html=True)
     subheading1_placeholder = st.empty()
-    subheading1_placeholder.markdown("<p class='camera-status'>Press 'Start Camera' to begin.</p>", unsafe_allow_html=True)
+    subheading1_placeholder.markdown("<p class='camera-status'>Press 'Start Monitoring' to begin.</p>", unsafe_allow_html=True)
     # Placeholder for video feed with reduced height
     FRAME_WINDOW = st.image([])  # Placeholder for the video feed
 
@@ -136,7 +136,7 @@ def main():
 
     # If the start button is pressed
     if start_button:
-        camera_status_placeholder.markdown("<p class='camera-status'>Camera is active. Press 'Stop Camera' to stop.</p>", unsafe_allow_html=True)
+        camera_status_placeholder.markdown("<p class='camera-status'>Camera is active. Press 'Stop/Reset' to stop.</p>", unsafe_allow_html=True)
         prev_time = time.time()
         camera_active = True
 
@@ -176,15 +176,15 @@ def main():
 
                     if violation_count == 1:
                         warning_placeholder1.warning(alert_msg)  # Display warning in sidebar
-                        speak(alert_msg)
+                        # speak(alert_msg)
                     elif violation_count == 2:
                         warning_placeholder2.warning(alert_msg)  # Display warning in sidebar
-                        speak(alert_msg)
+                        # speak(alert_msg)
 
                     if violation_count == 3:
                         warning_placeholder3.warning(alert_msg)
-                        speak(alert_msg)
-                        speak("This is the last warning, after this, your exam will be terminated.")
+                        # speak(alert_msg)
+                        # speak("This is the last warning, after this, your exam will be terminated.")
 
                     # If 4th warning is triggered, stop the camera automatically
                     if violation_count == 4:
@@ -242,7 +242,7 @@ def main():
     warning_placeholder4.empty()
     if violation_count == 4:
         st.warning("The exam has been terminated. Please contact the administrator.")
-        speak("The exam has been terminated. Please contact the administrator.")
+        # speak("The exam has been terminated. Please contact the administrator.")
 
     # Cleanup resources
     camera.release()
